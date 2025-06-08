@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atomlhos</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- CDN para ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- CDN para animações AOS -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <!-- CDN para Sortable.js (drag & drop) -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <!-- CDN para AOS -->
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+</head>
+<body>
+  <!-- Configurações -->
+  <div class="settings-toggle" data-aos="fade-left" data-aos-delay="500">⚙️</div>
+  <div class="settings-panel hidden">
+    <label>
+      Cor de fundo: <input type="color" id="bg-color-picker" />
+    </label>
+    <label>
+      Cor dos botões: <input type="color" id="button-color-picker" />
+    </label>
+    <label>
+      Imagem de fundo:
+      <input type="file" id="bg-image-upload" accept="image/*" />
+    </label>
+    <button id="remove-bg">Remover imagem de fundo</button>
+    <button id="close-settings">Fechar</button>
+  </div>
+
+  <!-- Container principal -->
+  <div class="main-container">
+    <!-- Cabeçalho -->
+    <header class="app-header" data-aos="fade-down" data-aos-duration="800">
+      <h1>Atomlhos</h1>
+      <p class="app-subtitle">Gerenciador inteligente de atalhos URL</p>
+    </header>
+
+
+    <!-- Seção de Criação de Atalhos -->
+    <section class="create-section" data-aos="fade-up" data-aos-delay="400">
+      <div class="section-header">
+        <h2><i class="fas fa-plus-circle"></i> Criar Novo Atalho</h2>
+      </div>
+      <div class="section-content">
+        <form id="shortcut-form">
+          <div class="form-row">
+            <div class="form-field">
+              <label for="shortcut-name">Nome do Atalho</label>
+              <input type="text" id="shortcut-name" placeholder="Ex: Google" required />
+            </div>
+            <div class="form-field">
+              <label for="shortcut-url">URL</label>
+              <input type="url" id="shortcut-url" placeholder="https://exemplo.com" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="shortcut-category">Categoria</label>
+              <select id="shortcut-category">
+                <option value="">Selecionar categoria</option>
+                <option value="trabalho">Trabalho</option>
+                <option value="social">Social</option>
+                <option value="entretenimento">Entretenimento</option>
+                <option value="educacao">Educação</option>
+                <option value="noticias">Notícias</option>
+                <option value="ferramentas">Ferramentas</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="new-category">Nova categoria (opcional)</label>
+              <input type="text" id="new-category" placeholder="Digite uma nova categoria" />
+            </div>
+          </div>
+          <button type="submit" class="create-btn">
+            <i class="fas fa-plus"></i> Adicionar Atalho
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Seção de Busca e Filtros -->
+    <section class="search-section" data-aos="fade-up" data-aos-delay="200">
+      <div class="section-header">
+        <h2><i class="fas fa-search"></i> Buscar e Filtrar</h2>
+      </div>
+      <div class="section-content">
+        <div class="search-container">
+          <input type="text" id="search-input" placeholder="🔍 Buscar atalhos..." />
+        </div>
+        <div class="filters-container">
+          <select id="category-filter">
+            <option value="">Todas as categorias</option>
+          </select>
+          <button id="show-favorites" class="filter-btn">
+            <i class="fas fa-star"></i> Favoritos
+          </button>
+          <button id="show-all" class="filter-btn active">
+            <i class="fas fa-th"></i> Todos
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção de Atalhos -->
+    <section class="shortcuts-section" data-aos="fade-up" data-aos-delay="600">
+      <div class="section-header">
+        <h2><i class="fas fa-bookmark"></i> Meus Atalhos</h2>
+        <div class="shortcuts-stats">
+          <span id="shortcuts-count">0 atalhos</span>
+        </div>
+      </div>
+      <div class="section-content">
+        <!-- Container para categorias -->
+        <div id="categories-container">
+          <!-- Seção de favoritos -->
+          <div class="category-section" id="favorites-section" style="display: none;">
+            <h2 class="category-title">
+              <span class="category-info">
+                <i class="fas fa-star"></i> Favoritos
+              </span>
+            </h2>
+            <div class="shortcuts-grid" id="favorites-shortcuts"></div>
+          </div>
+
+          <!-- Seções de categorias serão adicionadas dinamicamente -->
+        </div>
+
+        <!-- Container para atalhos sem categoria -->
+        <div class="category-section" id="uncategorized-section">
+          <h2 class="category-title">
+            <span class="category-info">
+              <i class="fas fa-folder"></i> Sem categoria
+            </span>
+          </h2>
+          <div class="shortcuts-grid" id="shortcuts"></div>
+        </div>
+
+        <!-- Mensagem quando não há atalhos -->
+        <div class="empty-state" id="empty-state" style="display: none;">
+          <div class="empty-icon">
+            <i class="fas fa-bookmark"></i>
+          </div>
+          <h3>Nenhum atalho criado ainda</h3>
+          <p>Comece criando seu primeiro atalho usando o formulário acima!</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Carregando preview...</p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
