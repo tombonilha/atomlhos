@@ -47,39 +47,67 @@ class AtomalhosApp {
   }
 
   initializeEventListeners() {
-    // Formulário
-    this.form.addEventListener("submit", (e) => this.handleFormSubmit(e));
+    // Verificar se os elementos existem antes de adicionar listeners
+    if (this.form) {
+      this.form.addEventListener("submit", (e) => this.handleFormSubmit(e));
+    }
     
-    // Busca com debounce
-    let searchTimeout;
-    this.searchInput.addEventListener("input", (e) => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => this.handleSearch(e.target.value), 300);
-    });
+    if (this.searchInput) {
+      let searchTimeout;
+      this.searchInput.addEventListener("input", (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => this.handleSearch(e.target.value), 300);
+      });
+    }
     
-    // Filtros
-    this.categoryFilter.addEventListener("change", (e) => this.handleCategoryFilter(e.target.value));
-    this.showFavoritesBtn.addEventListener("click", () => this.showFavorites());
-    this.showAllBtn.addEventListener("click", () => this.showAll());
+    if (this.categoryFilter) {
+      this.categoryFilter.addEventListener("change", (e) => this.handleCategoryFilter(e.target.value));
+    }
     
-    // Configurações
-    this.settingsToggle.addEventListener("click", () => this.toggleSettings());
-    this.closeSettingsBtn.addEventListener("click", () => this.closeSettings());
-    this.bgColorPicker.addEventListener("input", (e) => this.updateBgColor(e.target.value));
-    this.buttonColorPicker.addEventListener("input", (e) => this.updateButtonColor(e.target.value));
-    this.bgImageUpload.addEventListener("change", (e) => this.handleBgImageUpload(e));
-    this.removeBgBtn.addEventListener("click", () => this.removeBgImage());
+    if (this.showFavoritesBtn) {
+      this.showFavoritesBtn.addEventListener("click", () => this.showFavorites());
+    }
+    
+    if (this.showAllBtn) {
+      this.showAllBtn.addEventListener("click", () => this.showAll());
+    }
+    
+    if (this.settingsToggle) {
+      this.settingsToggle.addEventListener("click", () => this.toggleSettings());
+    }
+    
+    if (this.closeSettingsBtn) {
+      this.closeSettingsBtn.addEventListener("click", () => this.closeSettings());
+    }
+    
+    if (this.bgColorPicker) {
+      this.bgColorPicker.addEventListener("input", (e) => this.updateBgColor(e.target.value));
+    }
+    
+    if (this.buttonColorPicker) {
+      this.buttonColorPicker.addEventListener("input", (e) => this.updateButtonColor(e.target.value));
+    }
+    
+    if (this.bgImageUpload) {
+      this.bgImageUpload.addEventListener("change", (e) => this.handleBgImageUpload(e));
+    }
+    
+    if (this.removeBgBtn) {
+      this.removeBgBtn.addEventListener("click", () => this.removeBgImage());
+    }
     
     // Fechar configurações ao clicar fora
-    document.addEventListener("click", (e) => {
-      if (!this.settingsPanel.contains(e.target) && !this.settingsToggle.contains(e.target)) {
-        this.closeSettings();
-      }
-    });
+    if (this.settingsPanel && this.settingsToggle) {
+      document.addEventListener("click", (e) => {
+        if (!this.settingsPanel.contains(e.target) && !this.settingsToggle.contains(e.target)) {
+          this.closeSettings();
+        }
+      });
+    }
   }
 
   initializeAnimations() {
-    // Inicializar AOS
+    // Inicializar AOS se disponível
     if (typeof AOS !== "undefined") {
       AOS.init({
         duration: 600,
@@ -92,12 +120,14 @@ class AtomalhosApp {
 
   setupDragAndDrop() {
     // Configurar drag & drop para cada container de atalhos
-    this.setupSortableContainer(this.shortcutsContainer);
-    this.setupSortableContainer(this.favoritesContainer);
+    if (typeof Sortable !== "undefined") {
+      this.setupSortableContainer(this.shortcutsContainer);
+      this.setupSortableContainer(this.favoritesContainer);
+    }
   }
 
   setupSortableContainer(container) {
-    if (container) {
+    if (container && typeof Sortable !== "undefined") {
       new Sortable(container, {
         animation: 200,
         ghostClass: "sortable-ghost",
@@ -109,11 +139,15 @@ class AtomalhosApp {
   }
 
   showLoading() {
-    this.loadingOverlay.classList.add("show");
+    if (this.loadingOverlay) {
+      this.loadingOverlay.classList.add("show");
+    }
   }
 
   hideLoading() {
-    this.loadingOverlay.classList.remove("show");
+    if (this.loadingOverlay) {
+      this.loadingOverlay.classList.remove("show");
+    }
   }
 
   async handleFormSubmit(e) {
@@ -124,20 +158,40 @@ class AtomalhosApp {
     let category = this.categorySelect.value;
     const newCategory = this.newCategoryInput.value.trim();
     
+    // Verificar se há campos de cor (podem não existir no HTML)
+    const shortcutColorElement = document.getElementById("shortcut-color");
+    const categoryColorElement = document.getElementById("category-color");
+    const shortcutColor = shortcutColorElement ? shortcutColorElement.value : "#007bff";
+    const categoryColor = categoryColorElement ? categoryColorElement.value : "#6c757d";
+    
+    if (!name || !url) {
+      this.showNotification("Por favor, preencha todos os campos obrigatórios.", "error");
+      return;
+    }
+    
     if (newCategory) {
       category = newCategory.toLowerCase();
       this.categories.add(category);
       this.updateCategoryOptions();
+      
+      // Salvar cor da nova categoria se o elemento existir
+      if (categoryColorElement) {
+        this.saveCategoryColor(category, categoryColor);
+      }
     }
     
     this.showLoading();
     
     try {
-      await this.addShortcut(name, url, category);
+      await this.addShortcut(name, url, category, false, shortcutColor);
       this.form.reset();
       
-      // Mostrar feedback visual
+      // Resetar cores para valores padrão se os elementos existirem
+      if (shortcutColorElement) shortcutColorElement.value = "#007bff";
+      if (categoryColorElement) categoryColorElement.value = "#6c757d";
+      
       this.showNotification("Atalho adicionado com sucesso!", "success");
+      this.updateShortcutsCount();
     } catch (error) {
       this.showNotification("Erro ao adicionar atalho", "error");
       console.error("Erro ao adicionar atalho:", error);
@@ -172,38 +226,45 @@ class AtomalhosApp {
     }, 3000);
   }
 
-async getWebsiteIcon(url) {
-  try {
-    const domain = new URL(url).hostname;
-    // Retorna sempre o favicon do site sem problemas de CORS
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-  } catch {
-    return null;
+  async getWebsiteIcon(url) {
+    try {
+      const domain = new URL(url).hostname;
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+    } catch {
+      return null;
+    }
   }
-}
 
-// Atualiza addShortcut para usar apenas o favicon
-async addShortcut(name, url, category = "", isFavorite = false) {
-  const iconUrl = await this.getWebsiteIcon(url);
-  const shortcut = {
-    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-    name,
-    url,
-    category,
-    isFavorite,
-    icon: iconUrl,
-    createdAt: new Date().toISOString()
-  };
-  this.shortcuts.push(shortcut);
-  this.renderShortcut(shortcut);
-  this.saveData();
-  this.updateCategoryOptions();
-}
+  async addShortcut(name, url, category = "", isFavorite = false, color = "#007bff") {
+    // Normalizar URL
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+    
+    const iconUrl = await this.getWebsiteIcon(url);
+    const shortcut = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      name,
+      url,
+      category,
+      isFavorite,
+      icon: iconUrl,
+      color: color,
+      createdAt: new Date().toISOString()
+    };
+    
+    this.shortcuts.push(shortcut);
+    this.renderShortcut(shortcut);
+    this.saveData();
+    this.updateCategoryOptions();
+  }
 
   renderShortcut(shortcut) {
     const container = shortcut.category ? 
       this.getOrCreateCategoryContainer(shortcut.category) : 
       this.shortcutsContainer;
+    
+    if (!container) return;
     
     const div = document.createElement("div");
     div.className = `shortcut ${shortcut.isFavorite ? "favorite" : ""}`;
@@ -212,6 +273,11 @@ async addShortcut(name, url, category = "", isFavorite = false) {
     div.dataset.category = shortcut.category;
     div.setAttribute("data-aos", "fade-up");
     div.setAttribute("data-aos-delay", Math.random() * 200);
+    
+    // Aplicar cor personalizada
+    if (shortcut.color) {
+      div.style.background = shortcut.color;
+    }
     
     const previewHtml = this.generatePreviewHtml(shortcut);
     
@@ -225,22 +291,22 @@ async addShortcut(name, url, category = "", isFavorite = false) {
       </a>
       <div class="shortcut-actions">
         <button class="action-btn edit-btn" 
-                onclick="app.editShortcut(\'${shortcut.id}\')" 
+                onclick="app.editShortcut('${shortcut.id}')" 
                 title="Editar">
           <i class="fas fa-edit"></i>
         </button>
         <button class="action-btn duplicate-btn" 
-                onclick="app.duplicateShortcut(\'${shortcut.id}\')" 
+                onclick="app.duplicateShortcut('${shortcut.id}')" 
                 title="Duplicar">
           <i class="fas fa-copy"></i>
         </button>
         <button class="action-btn favorite-btn ${shortcut.isFavorite ? "active" : ""}" 
-                onclick="app.toggleFavorite(\'${shortcut.id}\')" 
+                onclick="app.toggleFavorite('${shortcut.id}')" 
                 title="Favoritar">
           <i class="fas fa-star"></i>
         </button>
         <button class="action-btn delete-btn" 
-                onclick="app.deleteShortcut(\'${shortcut.id}\')" 
+                onclick="app.deleteShortcut('${shortcut.id}')" 
                 title="Excluir">
           <i class="fas fa-trash"></i>
         </button>
@@ -261,17 +327,28 @@ async addShortcut(name, url, category = "", isFavorite = false) {
         <div class="shortcut-preview">
           <img
             src="${shortcut.icon}"
-            alt="Ícone"
-            onerror="this.src='assets/default-icon.png';"
+            alt="Ícone de ${shortcut.name}"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
           />
+          <div class="fallback-icon" style="display: none;">
+            <i class="fas fa-globe"></i>
+          </div>
         </div>
       `;
     } else {
-      return `<div class="shortcut-preview"><i class="fas fa-globe"></i></div>`;
+      return `
+        <div class="shortcut-preview">
+          <div class="fallback-icon">
+            <i class="fas fa-globe"></i>
+          </div>
+        </div>
+      `;
     }
   }
 
   getOrCreateCategoryContainer(category) {
+    if (!this.categoriesContainer) return this.shortcutsContainer;
+    
     let categorySection = document.getElementById(`category-${category}`);
     
     if (!categorySection) {
@@ -280,14 +357,22 @@ async addShortcut(name, url, category = "", isFavorite = false) {
       categorySection.id = `category-${category}`;
       categorySection.setAttribute("data-aos", "fade-up");
       
+      // Obter cor da categoria
+      const categoryColor = this.getCategoryColor(category);
+      
       categorySection.innerHTML = `
-        <h2 class="category-title">
+        <h2 class="category-title" style="border-bottom-color: ${categoryColor};">
           <span class="category-info">
-            <i class="fas fa-folder"></i> ${this.formatCategoryName(category)}
+            <i class="fas fa-folder" style="color: ${categoryColor};"></i> ${this.formatCategoryName(category)}
           </span>
           <div class="category-actions">
+            <button class="category-action-btn edit-category-btn" 
+                    onclick="app.editCategoryColor('${category}')" 
+                    title="Editar cor da categoria">
+              <i class="fas fa-palette"></i>
+            </button>
             <button class="category-action-btn delete-category-btn" 
-                    onclick="app.deleteCategory(\'${category}\')" 
+                    onclick="app.deleteCategory('${category}')" 
                     title="Excluir categoria">
               <i class="fas fa-trash"></i>
             </button>
@@ -305,6 +390,81 @@ async addShortcut(name, url, category = "", isFavorite = false) {
 
   formatCategoryName(category) {
     return category.charAt(0).toUpperCase() + category.slice(1);
+  }
+
+  getCategoryColor(category) {
+    // Cores padrão para categorias
+    const defaultColors = {
+      'trabalho': '#007bff',
+      'social': '#28a745',
+      'entretenimento': '#dc3545',
+      'educacao': '#ffc107',
+      'noticias': '#17a2b8',
+      'ferramentas': '#6f42c1'
+    };
+    
+    // Tentar obter cor salva ou usar cor padrão
+    const savedColor = localStorage.getItem(`atomlhos-category-color-${category}`);
+    return savedColor || defaultColors[category] || '#6c757d';
+  }
+
+  saveCategoryColorToStorage(category, color) {
+    localStorage.setItem(`atomlhos-category-color-${category}`, color);
+  }
+
+  saveCategoryColor(category) {
+    const colorInput = document.querySelector('#edit-category-color');
+    if (!colorInput) return;
+    
+    const newColor = colorInput.value;
+    
+    if (/^#[0-9A-F]{6}$/i.test(newColor)) {
+      this.saveCategoryColorToStorage(category, newColor);
+      this.renderAllShortcuts();
+      this.showNotification(`Cor da categoria "${this.formatCategoryName(category)}" atualizada!`, "success");
+      this.closeEditCategoryModal();
+    } else {
+      this.showNotification("Cor inválida! Use o formato #RRGGBB", "error");
+    }
+  }
+
+  editCategoryColor(category) {
+    const currentColor = this.getCategoryColor(category);
+    
+    // Criar modal de edição
+    const modal = document.createElement("div");
+    modal.id = "edit-category-modal";
+    modal.className = "modal-overlay";
+    
+    modal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Editar Cor da Categoria</h2>
+          <button class="close-modal-btn" onclick="app.closeEditCategoryModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="edit-category-color">Cor para "${this.formatCategoryName(category)}"</label>
+            <input type="color" id="edit-category-color" value="${currentColor}" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="app.closeEditCategoryModal()">Cancelar</button>
+          <button class="btn-primary" onclick="app.saveCategoryColor('${category}')">Salvar</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Focar no input de cor
+    modal.querySelector('#edit-category-color').focus();
+  }
+  closeEditCategoryModal() {
+    const modal = document.getElementById("edit-category-modal");
+    if (modal) {
+      modal.remove();
+    }
   }
 
   deleteCategory(category) {
@@ -359,7 +519,8 @@ async addShortcut(name, url, category = "", isFavorite = false) {
   }
 
   deleteShortcut(id) {
-    if (confirm("Tem certeza que deseja excluir este atalho?")) {
+    const shortcut = this.shortcuts.find(s => s.id === id);
+    if (shortcut && confirm(`Tem certeza que deseja excluir o atalho "${shortcut.name}"?`)) {
       this.shortcuts = this.shortcuts.filter(s => s.id !== id);
       this.renderAllShortcuts();
       this.saveData();
@@ -429,7 +590,7 @@ async addShortcut(name, url, category = "", isFavorite = false) {
           <div class="form-field">
             <label for="edit-shortcut-category">Categoria</label>
             <select id="edit-shortcut-category">
-              <!-- Opções de categoria serão preenchidas aqui -->
+              <option value="">Selecionar categoria</option>
             </select>
           </div>
           <div class="form-field">
@@ -443,41 +604,72 @@ async addShortcut(name, url, category = "", isFavorite = false) {
     
     document.body.appendChild(modal);
     
-    // Preencher categorias e selecionar a atual
-    const editCategorySelect = document.getElementById("edit-shortcut-category");
-    this.categories.forEach(cat => {
-      const option = document.createElement("option");
-      option.value = cat;
-      option.textContent = this.formatCategoryName(cat);
-      editCategorySelect.appendChild(option);
+    // Preencher opções de categoria
+    const categorySelect = modal.querySelector('#edit-shortcut-category');
+    this.categories.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = this.formatCategoryName(category);
+      option.selected = category === shortcut.category;
+      categorySelect.appendChild(option);
     });
-    editCategorySelect.value = shortcut.category;
-
-    // Adicionar listener para o formulário de edição
-    document.getElementById("edit-shortcut-form").addEventListener("submit", (e) => {
+    
+    // Adicionar evento de submit
+    const form = modal.querySelector('#edit-shortcut-form');
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const newName = document.getElementById("edit-shortcut-name").value.trim();
-      const newUrl = document.getElementById("edit-shortcut-url").value.trim();
-      let newCategory = document.getElementById("edit-shortcut-category").value;
-      const newNewCategory = document.getElementById("edit-new-category").value.trim();
-
-      if (newNewCategory) {
-        newCategory = newNewCategory.toLowerCase();
-        this.categories.add(newCategory);
-        this.updateCategoryOptions();
-      }
-
-      this.updateShortcut(shortcut.id, newName, newUrl, newCategory);
-      this.closeEditModal();
-      this.showNotification("Atalho atualizado com sucesso!", "success");
+      this.saveEditedShortcut(shortcut.id, modal);
     });
+    
+    // Focar no primeiro campo
+    modal.querySelector('#edit-shortcut-name').focus();
+  }
 
-    // Fechar modal ao clicar fora
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) {
-        this.closeEditModal();
+  async saveEditedShortcut(id, modal) {
+    const name = modal.querySelector('#edit-shortcut-name').value.trim();
+    const url = modal.querySelector('#edit-shortcut-url').value.trim();
+    let category = modal.querySelector('#edit-shortcut-category').value;
+    const newCategory = modal.querySelector('#edit-new-category').value.trim();
+    
+    if (!name || !url) {
+      this.showNotification('Por favor, preencha todos os campos.', 'error');
+      return;
+    }
+    
+    if (newCategory) {
+      category = newCategory.toLowerCase();
+      this.categories.add(category);
+    }
+    
+    const shortcut = this.shortcuts.find(s => s.id === id);
+    if (shortcut) {
+      // Normalizar URL
+      let normalizedUrl = url;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        normalizedUrl = 'https://' + url;
       }
-    });
+      
+      const urlChanged = shortcut.url !== normalizedUrl;
+      
+      // Atualizar dados básicos
+      shortcut.name = name;
+      shortcut.url = normalizedUrl;
+      shortcut.category = category;
+      
+      // Se a URL mudou, buscar novo ícone
+      if (urlChanged) {
+        shortcut.icon = await this.getWebsiteIcon(normalizedUrl);
+      }
+      
+      this.saveData();
+      this.updateCategoryOptions();
+      this.renderAllShortcuts();
+      this.updateShortcutsCount();
+      this.showNotification('Atalho atualizado com sucesso!', 'success');
+    }
+    
+    // Fechar modal
+    this.closeEditModal();
   }
 
   closeEditModal() {
@@ -487,202 +679,284 @@ async addShortcut(name, url, category = "", isFavorite = false) {
     }
   }
 
-  updateShortcut(id, newName, newUrl, newCategory) {
-    const shortcut = this.shortcuts.find(s => s.id === id);
-    if (shortcut) {
-      shortcut.name = newName;
-      shortcut.url = newUrl;
-      shortcut.category = newCategory;
-      this.saveData();
-      this.renderAllShortcuts();
-    }
-  }
-
-  handleSearch(term) {
-    this.searchTerm = term.toLowerCase();
-    this.renderAllShortcuts();
+  handleSearch(searchTerm) {
+    this.searchTerm = searchTerm.toLowerCase();
+    this.applyFilters();
   }
 
   handleCategoryFilter(category) {
     this.currentFilter = category;
-    this.renderAllShortcuts();
-    
-    // Atualizar estado dos botões de filtro
-    document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
-    if (category === "favorites") {
-      this.showFavoritesBtn.classList.add("active");
-    } else if (category === "all") {
-      this.showAllBtn.classList.add("active");
-    }
+    this.applyFilters();
   }
 
   showFavorites() {
-    this.currentFilter = "favorites";
-    this.renderAllShortcuts();
-    
-    // Atualizar estado dos botões de filtro
-    document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
-    this.showFavoritesBtn.classList.add("active");
+    this.currentFilter = 'favorites';
+    if (this.showFavoritesBtn) this.showFavoritesBtn.classList.add('active');
+    if (this.showAllBtn) this.showAllBtn.classList.remove('active');
+    this.applyFilters();
   }
 
   showAll() {
-    this.currentFilter = "all";
-    this.renderAllShortcuts();
+    this.currentFilter = 'all';
+    if (this.showAllBtn) this.showAllBtn.classList.add('active');
+    if (this.showFavoritesBtn) this.showFavoritesBtn.classList.remove('active');
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    const shortcuts = document.querySelectorAll('.shortcut');
     
-    // Atualizar estado dos botões de filtro
-    document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
-    this.showAllBtn.classList.add("active");
+    shortcuts.forEach(shortcutElement => {
+      const name = shortcutElement.dataset.name || '';
+      const category = shortcutElement.dataset.category || '';
+      const isFavorite = shortcutElement.classList.contains('favorite');
+      
+      let show = true;
+      
+      // Filtro de busca
+      if (this.searchTerm && !name.includes(this.searchTerm)) {
+        show = false;
+      }
+      
+      // Filtro de categoria
+      if (this.currentFilter === 'favorites' && !isFavorite) {
+        show = false;
+      } else if (this.currentFilter !== 'all' && this.currentFilter !== 'favorites' && category !== this.currentFilter) {
+        show = false;
+      }
+      
+      shortcutElement.style.display = show ? 'block' : 'none';
+    });
+    
+    // Mostrar/ocultar seções de categoria vazias
+    const categorySections = document.querySelectorAll('.category-section');
+    categorySections.forEach(section => {
+      const visibleShortcuts = section.querySelectorAll('.shortcut[style*="block"], .shortcut:not([style])');
+      section.style.display = visibleShortcuts.length > 0 ? 'block' : 'none';
+    });
   }
 
   renderAllShortcuts() {
     // Limpar containers
-    this.shortcutsContainer.innerHTML = "";
-    this.favoritesContainer.innerHTML = "";
-    document.querySelectorAll(".category-section:not(#favorites-section):not(#uncategorized-section)").forEach(el => el.remove());
+    if (this.shortcutsContainer) this.shortcutsContainer.innerHTML = '';
+    if (this.categoriesContainer) this.categoriesContainer.innerHTML = '';
     
-    // Esconder/mostrar seção de favoritos
-    this.favoritesSection.style.display = this.currentFilter === "favorites" ? "block" : "none";
-
-    let filteredShortcuts = this.shortcuts.filter(shortcut => {
-      const matchesSearch = shortcut.name.toLowerCase().includes(this.searchTerm) || 
-                            shortcut.url.toLowerCase().includes(this.searchTerm);
-      
-      const matchesCategory = this.currentFilter === "all" || 
-                              (this.currentFilter === "favorites" && shortcut.isFavorite) ||
-                              (this.currentFilter !== "favorites" && shortcut.category === this.currentFilter);
-      
-      return matchesSearch && matchesCategory;
-    });
-
-    if (filteredShortcuts.length === 0 && this.searchTerm === "" && this.currentFilter === "all") {
-      document.getElementById("empty-state").style.display = "block";
-    } else {
-      document.getElementById("empty-state").style.display = "none";
-    }
-
-    // Renderizar atalhos
-    filteredShortcuts.forEach(shortcut => {
-      if (this.currentFilter === "favorites" && !shortcut.isFavorite) {
-        return; // Não renderizar não-favoritos na visão de favoritos
-      }
+    // Renderizar todos os atalhos
+    this.shortcuts.forEach(shortcut => {
       this.renderShortcut(shortcut);
     });
-
-    this.updateShortcutsCount();
+    
+    // Aplicar filtros atuais
+    this.applyFilters();
+    
+    // Refresh AOS
+    if (typeof AOS !== "undefined") {
+      AOS.refresh();
+    }
   }
 
-  updateShortcutsCount() {
-    const count = this.shortcuts.length;
-    document.getElementById("shortcuts-count").textContent = `${count} atalho(s)`;
+  setTheme(theme) {
+    // Remover classes existentes
+    document.documentElement.classList.remove('light-theme', 'dark-theme');
+    
+    if (theme === 'auto') {
+      localStorage.removeItem('atomlhos-theme-preference');
+      this.updateThemeBasedOnBackground();
+    } else {
+      document.documentElement.classList.add(theme + '-theme');
+      localStorage.setItem('atomlhos-theme-preference', theme);
+    }
   }
 
   updateCategoryOptions() {
-    this.categorySelect.innerHTML = 
-      `<option value="">Selecionar categoria</option>
-       <option value="all">Todas as categorias</option>`;
-    this.categoryFilter.innerHTML = 
-      `<option value="all">Todas as categorias</option>`;
-
-    this.categories.forEach(category => {
-      const option = document.createElement("option");
-      option.value = category;
-      option.textContent = this.formatCategoryName(category);
-      this.categorySelect.appendChild(option);
-
-      const filterOption = document.createElement("option");
-      filterOption.value = category;
-      filterOption.textContent = this.formatCategoryName(category);
-      this.categoryFilter.appendChild(filterOption);
-    });
-
-    // Restaurar a seleção atual
-    this.categoryFilter.value = this.currentFilter;
+    // Atualizar select de categoria no formulário
+    if (this.categorySelect) {
+      const currentValue = this.categorySelect.value;
+      
+      // Limpar opções existentes (exceto a primeira)
+      while (this.categorySelect.children.length > 1) {
+        this.categorySelect.removeChild(this.categorySelect.lastChild);
+      }
+      
+      // Adicionar categorias
+      this.categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = this.formatCategoryName(category);
+        this.categorySelect.appendChild(option);
+      });
+      
+      // Restaurar valor selecionado
+      this.categorySelect.value = currentValue;
+    }
+    
+    // Atualizar filtro de categoria
+    if (this.categoryFilter) {
+      const currentFilterValue = this.categoryFilter.value;
+      
+      // Limpar opções existentes (exceto a primeira)
+      while (this.categoryFilter.children.length > 1) {
+        this.categoryFilter.removeChild(this.categoryFilter.lastChild);
+      }
+      
+      // Adicionar categorias
+      this.categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = this.formatCategoryName(category);
+        this.categoryFilter.appendChild(option);
+      });
+      
+      // Restaurar valor selecionado
+      this.categoryFilter.value = currentFilterValue;
+    }
   }
 
-  saveData() {
-    localStorage.setItem("atomalhosShortcuts", JSON.stringify(this.shortcuts));
-    localStorage.setItem("atomalhosCategories", JSON.stringify(Array.from(this.categories)));
-    localStorage.setItem("atomalhosBgColor", document.body.style.getPropertyValue("--bg-color"));
-    localStorage.setItem("atomalhosButtonColor", document.body.style.getPropertyValue("--button-color"));
-    localStorage.setItem("atomalhosBgImage", localStorage.getItem("atomalhosBgImage")); // Salva a URL da imagem de fundo
+  updateShortcutsCount() {
+    const countElement = document.querySelector('.shortcuts-count');
+    if (countElement) {
+      const count = this.shortcuts.length;
+      countElement.textContent = `${count} atalho${count !== 1 ? 's' : ''}`;
+    }
   }
 
-  loadData() {
-    const storedShortcuts = localStorage.getItem("atomalhosShortcuts");
-    const storedCategories = localStorage.getItem("atomalhosCategories");
-    const storedBgColor = localStorage.getItem("atomalhosBgColor");
-    const storedButtonColor = localStorage.getItem("atomalhosButtonColor");
-    const storedBgImage = localStorage.getItem("atomalhosBgImage");
-
-    if (storedShortcuts) {
-      this.shortcuts = JSON.parse(storedShortcuts);
-    }
-    if (storedCategories) {
-      this.categories = new Set(JSON.parse(storedCategories));
-    }
-    if (storedBgColor) {
-      this.updateBgColor(storedBgColor);
-    }
-    if (storedButtonColor) {
-      this.updateButtonColor(storedButtonColor);
-    }
-    if (storedBgImage) {
-      this.applyBgImage(storedBgImage);
-    }
-
-    this.renderAllShortcuts();
-    this.updateCategoryOptions();
-    this.updateShortcutsCount();
-  }
-
-  // Funções de configurações
+  // Configurações de tema
   toggleSettings() {
-    this.settingsPanel.classList.toggle("hidden");
+    if (this.settingsPanel) {
+      this.settingsPanel.classList.toggle('hidden');
+    }
   }
 
   closeSettings() {
-    this.settingsPanel.classList.add("hidden");
+    if (this.settingsPanel) {
+      this.settingsPanel.classList.add('hidden');
+    }
   }
 
   updateBgColor(color) {
-    document.body.style.setProperty("--bg-color", color);
-    this.saveData();
+    document.documentElement.style.setProperty('--bg-color', color);
+    localStorage.setItem('atomlhos-bg-color', color);
   }
 
   updateButtonColor(color) {
-    document.body.style.setProperty("--button-color", color);
-    this.saveData();
+    document.documentElement.style.setProperty('--button-color', color);
+    localStorage.setItem('atomlhos-button-color', color);
   }
 
   handleBgImageUpload(event) {
     const file = event.target.files[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        this.showNotification('Imagem muito grande. Máximo 5MB.', 'error');
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageUrl = e.target.result;
-        this.applyBgImage(imageUrl);
-        localStorage.setItem("atomalhosBgImage", imageUrl);
-        this.showNotification("Imagem de fundo aplicada!", "success");
+        document.body.style.backgroundImage = `url(${imageUrl})`;
+        localStorage.setItem('atomlhos-bg-image', imageUrl);
+        this.updateThemeBasedOnBackground();
+        this.showNotification('Imagem de fundo alterada!', 'success');
       };
       reader.readAsDataURL(file);
     }
   }
 
-  applyBgImage(imageUrl) {
-    document.body.style.backgroundImage = `url("${imageUrl}")`;
-    document.body.style.backgroundSize = "cover";
-    document.body.style.backgroundPosition = "center";
-    document.body.style.backgroundAttachment = "fixed";
+  removeBgImage() {
+    if (confirm('Tem certeza que deseja remover a imagem de fundo?')) {
+      document.body.style.backgroundImage = '';
+      localStorage.removeItem('atomlhos-bg-image');
+      this.updateThemeBasedOnBackground();
+      this.showNotification('Imagem de fundo removida!', 'success');
+    }
   }
 
-  removeBgImage() {
-    document.body.style.backgroundImage = "none";
-    localStorage.removeItem("atomalhosBgImage");
-    this.showNotification("Imagem de fundo removida!", "success");
-    this.saveData();
+  // Salvar e carregar dados
+  saveData() {
+    try {
+      localStorage.setItem('atomlhos-shortcuts', JSON.stringify(this.shortcuts));
+      localStorage.setItem('atomlhos-categories', JSON.stringify([...this.categories]));
+    } catch (error) {
+      console.error('Erro ao salvar dados:', error);
+      this.showNotification('Erro ao salvar dados.', 'error');
+    }
+  }
+
+  updateThemeBasedOnBackground() {
+    // Verifica se o fundo é claro
+    const bgColor = getComputedStyle(document.body).backgroundColor;
+    const rgb = bgColor.match(/\d+/g);
+    if (rgb) {
+      // Fórmula para calcular brilho
+      const brightness = (parseInt(rgb[0]) * 299 + 
+                        (parseInt(rgb[1]) * 587) + 
+                        (parseInt(rgb[2]) * 114)) / 1000;
+      const isLight = brightness > 128;
+      
+      document.documentElement.classList.toggle('light-theme', isLight);
+      localStorage.setItem('atomlhos-theme-preference', isLight ? 'light' : 'dark');
+    }
+  }
+  
+  loadData() {
+    try {
+      // Carregar atalhos
+      const savedShortcuts = localStorage.getItem('atomlhos-shortcuts');
+      if (savedShortcuts) { 
+        this.shortcuts = JSON.parse(savedShortcuts);
+        this.shortcuts.forEach(shortcut => {
+          // Garantir que atalhos antigos tenham uma cor padrão
+          if (!shortcut.color) {
+            shortcut.color = '#007bff';
+          }
+          this.renderShortcut(shortcut);
+        });
+      }
+      
+      // Carregar categorias
+      const savedCategories = localStorage.getItem('atomlhos-categories');
+      if (savedCategories) {
+        this.categories = new Set(JSON.parse(savedCategories));
+      }
+      
+      // Carregar configurações de tema
+      const savedBgColor = localStorage.getItem('atomlhos-bg-color');
+      if (savedBgColor && this.bgColorPicker) {
+        document.documentElement.style.setProperty('--bg-color', savedBgColor);
+        this.bgColorPicker.value = savedBgColor;
+      }
+      
+      const savedButtonColor = localStorage.getItem('atomlhos-button-color');
+      if (savedButtonColor && this.buttonColorPicker) {
+        document.documentElement.style.setProperty('--button-color', savedButtonColor);
+        this.buttonColorPicker.value = savedButtonColor;
+      }
+      
+      const savedBgImage = localStorage.getItem('atomlhos-bg-image');
+      if (savedBgImage) {
+        document.body.style.backgroundImage = `url(${savedBgImage})`;
+
+        const savedTheme = localStorage.getItem('atomlhos-theme-preference');
+        if (savedTheme) {
+          this.setTheme(savedTheme);
+        } else {
+          this.updateThemeBasedOnBackground();
+        }
+      }
+      
+      // Atualizar opções de categoria
+      this.updateCategoryOptions();
+      this.updateShortcutsCount();
+      
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      this.showNotification('Erro ao carregar dados salvos.', 'error');
+    }
   }
 }
-
-const app = new AtomalhosApp();
-
-
+// Inicializar aplicação quando o DOM estiver carregado
+let app; 
+document.addEventListener('DOMContentLoaded', () => {
+app = new AtomalhosApp();
+});

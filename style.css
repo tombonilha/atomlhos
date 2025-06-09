@@ -11,8 +11,14 @@
   --transition: all 0.3s ease;
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.15);
-  --section-bg: rgba(255, 255, 255, 0.08);
+  --section-bg: rgba(80, 80, 80, 0.39);
   --section-border: rgba(255, 255, 255, 0.1);
+  --text-color: rgba(255, 255, 255, 0.9);
+  --text-color-light: #333;
+  --section-bg-light: rgba(255, 255, 255, 0.9);
+  --section-border-light: rgba(0, 0, 0, 0.1);
+  --card-bg-light: white;
+  --shadow-light: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -22,7 +28,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: var(--bg-color, #0f0f0f) no-repeat center center fixed;
+  background: var(--bg-color, #000000) no-repeat center center fixed;
   background-size: cover;
   color: white;
   transition: var(--transition);
@@ -50,7 +56,7 @@ body {
   font-size: 4rem;
   font-weight: 500;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-  background: linear-gradient(45deg, #007bff, #00d4ff);
+  background: linear-gradient(45deg, #7d08eb, #7d08eb);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -58,9 +64,25 @@ body {
 
 .app-subtitle {
   margin: 0;
-  font-size: 1.2rem;
-  opacity: 0.8;
+  font-size: 2.2rem;
   font-weight: 300;
+  background: linear-gradient(45deg, #7d08eb, #7d08eb);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Container principal */
+.main-container {
+  max-width: 1800px; /* Reduzido de 1800px */
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+/* Seção de atalhos - largura total para melhor visualização */
+.shortcuts-section {
+  max-width: 1800px; /* Largura maior para os atalhos */
 }
 
 /* Seções */
@@ -73,15 +95,18 @@ section {
   overflow: hidden;
   box-shadow: var(--shadow);
   transition: var(--transition);
+  max-width: 1800px; /* Limitar largura das seções */
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 3rem;
 }
-
 section:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
 }
 
 .section-header {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(46, 46, 46, 0.671);
   padding: 1.5rem 2rem;
   border-bottom: 1px solid var(--section-border);
   display: flex;
@@ -105,7 +130,7 @@ section:hover {
 .shortcuts-stats {
   font-size: 0.9rem;
   opacity: 0.7;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(61, 61, 61, 0.1);
   padding: 0.5rem 1rem;
   border-radius: 20px;
 }
@@ -125,7 +150,7 @@ section:hover {
   font-size: 1.1rem;
   border: none;
   border-radius: var(--border-radius);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(216, 216, 216, 0.925);
   color: #333333c0;
   transition: var(--transition);
   box-shadow: var(--shadow);
@@ -135,7 +160,7 @@ section:hover {
   outline: none;
   transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
-  background: white;
+  background: rgb(229, 255, 228);
 }
 
 .filters-container {
@@ -149,7 +174,7 @@ section:hover {
   padding: 1rem;
   border: none;
   border-radius: var(--border-radius);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(216, 216, 216, 0.925);
   color: #333333c0;
   font-size: 1rem;
   cursor: pointer;
@@ -160,7 +185,7 @@ section:hover {
 
 #category-filter:focus {
   outline: none;
-  background: white;
+  background: rgb(229, 255, 228);
   transform: translateY(-2px);
 }
 
@@ -215,7 +240,7 @@ section:hover {
   font-size: 1rem;
   border: none;
   border-radius: var(--border-radius);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(216, 216, 216, 0.925);
   color: #333333c0;
   transition: var(--transition);
 }
@@ -225,7 +250,7 @@ section:hover {
   outline: none;
   transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
-  background: white;
+  background: rgb(229, 255, 228);
 }
 
 .create-btn {
@@ -331,15 +356,15 @@ section:hover {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 130px; /* ou ajuste conforme seu layout */
+  height: 80px; /* ou ajuste conforme seu layout */
   background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .shortcut-preview img {
-  max-width: 80%;
-  max-height: 80%;
+  max-width: 60%;
+  max-height: 60%;
   object-fit: contain;
   border-radius: 8px;
 }
@@ -544,20 +569,25 @@ section:hover {
 
 /* Responsividade */
 @media (max-width: 768px) {
-  .container {
+  .main-container {
     margin: 1vh auto;
     padding: 1rem;
   }
 
-  h1 {
-    font-size: 2rem;
+  .app-header h1 {
+    font-size: 2.5rem;
   }
 
-  form {
+  section {
+    max-width: 100%;
+    margin-bottom: 2rem;
+  }
+
+  .form-row {
     grid-template-columns: 1fr;
   }
 
-  .controls {
+  .filters-container {
     flex-direction: column;
     align-items: stretch;
   }
@@ -1082,3 +1112,248 @@ button:focus {
   }
 }
 
+
+/* Estilos para seletores de cor */
+.form-field input[type="color"] {
+  width: 100%;
+  height: 3rem;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  background: none;
+  padding: 0;
+}
+
+.form-field input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: var(--border-radius);
+}
+
+.form-field input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: var(--border-radius);
+}
+
+/* Estilos para botões de ação de categoria */
+.category-action-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  font-size: 0.9rem;
+}
+
+.category-action-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.edit-category-btn {
+  background: rgba(40, 167, 69, 0.8);
+}
+
+.edit-category-btn:hover {
+  background: rgba(40, 167, 69, 1);
+}
+
+.delete-category-btn {
+  background: rgba(220, 53, 69, 0.8);
+}
+
+.delete-category-btn:hover {
+  background: rgba(220, 53, 69, 1);
+}
+
+/* Melhorias no layout das seções */
+.section-content {
+  padding: 1.5rem 2rem;
+}
+
+/* Ajustes para telas menores */
+@media (max-width: 1024px) {
+  .main-container {
+    max-width: 95%;
+  }
+  
+  section {
+    max-width: 100%;
+  }
+  
+  .shortcuts-section {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .section-content {
+    padding: 1rem;
+  }
+  
+  .section-header {
+    padding: 1rem;
+  }
+}
+
+/* Estilos específicos para o modal de edição de categoria */
+#edit-category-modal .modal-content {
+  max-width: 400px;
+}
+
+#edit-category-modal .form-field {
+  margin-bottom: 1.5rem;
+}
+
+#edit-category-modal input[type="color"] {
+  width: 100%;
+  height: 60px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  background: none;
+  padding: 0;
+}
+
+#edit-category-modal input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: var(--border-radius);
+}
+
+#edit-category-modal input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+
+/* Melhorar botões do modal */
+#edit-category-modal .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#edit-category-modal .btn-primary,
+#edit-category-modal .btn-secondary {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+#edit-category-modal .btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+#edit-category-modal .btn-primary:hover {
+  background: #0056b3;
+  transform: translateY(-2px);
+}
+
+#edit-category-modal .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+#edit-category-modal .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+body.light-theme {
+  --text-color: var(--text-color-light);
+  --section-bg: var(--section-bg-light);
+  --section-border: var(--section-border-light);
+  --shadow: var(--shadow-light);
+}
+
+body.light-theme .shortcut {
+  background: var(--card-bg-light);
+  color: var(--text-color-light);
+  border: 1px solid var(--section-border-light);
+}
+
+body.light-theme .section-header {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme input,
+body.light-theme select {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-color-light);
+}
+
+body.light-theme .settings-panel {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text-color-light);
+}
+
+body.light-theme .modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text-color-light);
+}
+
+/* Ajuste para ícones e botões */
+body.light-theme .action-btn {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text-color-light);
+}
+
+body.light-theme .action-btn:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+.theme-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--section-border);
+}
+
+.theme-switcher label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.theme-switcher button {
+  padding: 0.8rem;
+  border: none;
+  border-radius: var(--border-radius);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+}
+
+body.light-theme .theme-switcher button {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-color-light);
+}
+
+.theme-switcher button:hover {
+  background: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.theme-switcher button.active {
+  background: var(--primary-color);
+  box-shadow: var(--shadow);
+}

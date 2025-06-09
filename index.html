@@ -76,6 +76,16 @@
               <input type="text" id="new-category" placeholder="Digite uma nova categoria" />
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="shortcut-color">Cor do Atalho</label>
+              <input type="color" id="shortcut-color" value="#007bff" />
+            </div>
+            <div class="form-field">
+              <label for="category-color">Cor da Categoria (opcional)</label>
+              <input type="color" id="category-color" value="#6c757d" />
+            </div>
+          </div>
           <button type="submit" class="create-btn">
             <i class="fas fa-plus"></i> Adicionar Atalho
           </button>
@@ -151,6 +161,17 @@
       </div>
     </section>
   </div>
+
+  <div class="settings-panel hidden">
+  <!-- Mantenha os existentes e adicione: -->
+  <div class="theme-switcher">
+    <label>Tema:</label>
+    <button onclick="app.setTheme('auto')">Automático</button>
+    <button onclick="app.setTheme('light')">Claro</button>
+    <button onclick="app.setTheme('dark')">Escuro</button>
+  </div>
+  <!-- ... resto do conteúdo ... -->
+</div>
 
   <!-- Loading overlay -->
   <div id="loading-overlay" class="loading-overlay">
