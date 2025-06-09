@@ -331,7 +331,7 @@ section:hover {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 80px; /* ou ajuste conforme seu layout */
+  height: 100px; /* ou ajuste conforme seu layout */
   background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   overflow: hidden;
