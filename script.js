@@ -2,9 +2,9 @@
 class AtomalhosApp {
   constructor() {
     this.shortcuts = [];
-    this.categories = new Set(['trabalho', 'social', 'entretenimento', 'educacao', 'noticias', 'ferramentas']);
-    this.currentFilter = 'all';
-    this.searchTerm = '';
+    this.categories = new Set(["trabalho", "social", "entretenimento", "educacao", "noticias", "ferramentas"]);
+    this.currentFilter = "all";
+    this.searchTerm = "";
     
     this.initializeElements();
     this.initializeEventListeners();
@@ -80,10 +80,10 @@ class AtomalhosApp {
 
   initializeAnimations() {
     // Inicializar AOS
-    if (typeof AOS !== 'undefined') {
+    if (typeof AOS !== "undefined") {
       AOS.init({
         duration: 600,
-        easing: 'ease-in-out',
+        easing: "ease-in-out",
         once: true,
         offset: 50
       });
@@ -100,20 +100,20 @@ class AtomalhosApp {
     if (container) {
       new Sortable(container, {
         animation: 200,
-        ghostClass: 'sortable-ghost',
-        chosenClass: 'sortable-chosen',
-        dragClass: 'sortable-drag',
+        ghostClass: "sortable-ghost",
+        chosenClass: "sortable-chosen",
+        dragClass: "sortable-drag",
         onEnd: () => this.saveData()
       });
     }
   }
 
   showLoading() {
-    this.loadingOverlay.classList.add('show');
+    this.loadingOverlay.classList.add("show");
   }
 
   hideLoading() {
-    this.loadingOverlay.classList.remove('show');
+    this.loadingOverlay.classList.remove("show");
   }
 
   async handleFormSubmit(e) {
@@ -137,17 +137,17 @@ class AtomalhosApp {
       this.form.reset();
       
       // Mostrar feedback visual
-      this.showNotification('Atalho adicionado com sucesso!', 'success');
+      this.showNotification("Atalho adicionado com sucesso!", "success");
     } catch (error) {
-      this.showNotification('Erro ao adicionar atalho', 'error');
-      console.error('Erro ao adicionar atalho:', error);
+      this.showNotification("Erro ao adicionar atalho", "error");
+      console.error("Erro ao adicionar atalho:", error);
     } finally {
       this.hideLoading();
     }
   }
 
-  showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
+  showNotification(message, type = "info") {
+    const notification = document.createElement("div");
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
     
@@ -156,7 +156,7 @@ class AtomalhosApp {
       top: 20px;
       right: 20px;
       padding: 1rem 1.5rem;
-      background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff'};
+      background: ${type === "success" ? "#28a745" : type === "error" ? "#dc3545" : "#007bff"};
       color: white;
       border-radius: 8px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
@@ -167,12 +167,12 @@ class AtomalhosApp {
     document.body.appendChild(notification);
     
     setTimeout(() => {
-      notification.style.animation = 'slideOutRight 0.3s ease';
+      notification.style.animation = "slideOutRight 0.3s ease";
       setTimeout(() => notification.remove(), 300);
     }, 3000);
   }
 
-  async addShortcut(name, url, category = '', isFavorite = false) {
+  async addShortcut(name, url, category = "", isFavorite = false) {
     const shortcut = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       name,
@@ -191,7 +191,7 @@ class AtomalhosApp {
     this.updateShortcutsCount();
     
     // Refresh AOS para novos elementos
-    if (typeof AOS !== 'undefined') {
+    if (typeof AOS !== "undefined") {
       AOS.refresh();
     }
   }
@@ -218,51 +218,104 @@ class AtomalhosApp {
         }
       }
       
-      return 'fas fa-globe';
+      return "fas fa-globe";
     } catch {
-      return 'fas fa-globe';
+      return "fas fa-globe";
     }
   }
 
   async getWebsitePreview(url) {
     try {
-      // Usar múltiplos serviços de preview
-      const previewServices = [
-        `https://api.microlink.io?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`,
-        `https://api.urlbox.io/v1/ca482d7e-9417-4569-90fe-80f7c5e1c781/png?url=${encodeURIComponent(url)}&width=400&height=300`
+      console.log(`Attempting to get favicon for: ${url}`);
+      
+      // Extrair o domínio da URL
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname;
+      
+      // Múltiplas estratégias para obter o favicon
+      const faviconSources = [
+        // Google Favicon API (mais confiável)
+        `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+        // DuckDuckGo Favicon API
+        `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+        // Favicon padrão do site
+        `${urlObj.protocol}//${domain}/favicon.ico`,
+        // Favicon na raiz
+        `${urlObj.protocol}//${domain}/favicon.png`,
+        // Apple touch icon
+        `${urlObj.protocol}//${domain}/apple-touch-icon.png`
       ];
       
-      for (const serviceUrl of previewServices) {
-        try {
-          const response = await fetch(serviceUrl);
-          const data = await response.json();
-          
-          if (data.status === 'success' && data.data) {
-            return {
-              title: data.data.title || new URL(url).hostname,
-              description: data.data.description || '',
-              image: data.data.screenshot?.url || data.data.image?.url,
-              logo: data.data.logo?.url
-            };
-          }
-        } catch (error) {
-          console.log('Serviço de preview não disponível:', error);
-          continue;
-        }
-      }
+      // Tentar carregar o favicon
+      const faviconUrl = await this.tryLoadFavicon(faviconSources);
+      
+      const previewData = {
+        title: domain,
+        description: `Site: ${domain}`,
+        image: faviconUrl,
+        logo: faviconUrl
+      };
+      
+      console.log("Favicon data extracted:", previewData);
+      return previewData;
+      
+    } catch (error) {
+      console.error("Error fetching favicon:", error);
       
       // Fallback: extrair informações básicas da URL
-      const urlObj = new URL(url);
-      return {
-        title: urlObj.hostname,
-        description: `Site: ${urlObj.hostname}`,
-        image: null,
-        logo: null
-      };
-    } catch (error) {
-      console.log('Preview não disponível:', error);
-      return null;
+      try {
+        const urlObj = new URL(url);
+        return {
+          title: urlObj.hostname,
+          description: `Site: ${urlObj.hostname}`,
+          image: null,
+          logo: null
+        };
+      } catch (urlError) {
+        console.error("Error parsing URL:", urlError);
+        return null;
+      }
     }
+  }
+
+  async tryLoadFavicon(faviconSources) {
+    for (const faviconUrl of faviconSources) {
+      try {
+        console.log(`Trying favicon source: ${faviconUrl}`);
+        
+        // Criar uma imagem para testar se o favicon carrega
+        const img = new Image();
+        
+        const loadPromise = new Promise((resolve, reject) => {
+          img.onload = () => {
+            console.log(`Favicon loaded successfully: ${faviconUrl}`);
+            resolve(faviconUrl);
+          };
+          img.onerror = () => {
+            console.log(`Favicon failed to load: ${faviconUrl}`);
+            reject(new Error('Failed to load'));
+          };
+          
+          // Timeout de 5 segundos
+          setTimeout(() => {
+            reject(new Error('Timeout'));
+          }, 5000);
+        });
+        
+        img.src = faviconUrl;
+        
+        // Se chegou até aqui, o favicon carregou com sucesso
+        return await loadPromise;
+        
+      } catch (error) {
+        console.log(`Failed to load favicon from: ${faviconUrl}`, error);
+        continue; // Tentar próxima fonte
+      }
+    }
+    
+    // Se nenhum favicon foi encontrado, retornar null
+    console.log("No favicon found from any source");
+    return null;
   }
 
   renderShortcut(shortcut) {
@@ -271,12 +324,12 @@ class AtomalhosApp {
       this.shortcutsContainer;
     
     const div = document.createElement("div");
-    div.className = `shortcut ${shortcut.isFavorite ? 'favorite' : ''}`;
+    div.className = `shortcut ${shortcut.isFavorite ? "favorite" : ""}`;
     div.dataset.id = shortcut.id;
     div.dataset.name = shortcut.name.toLowerCase();
     div.dataset.category = shortcut.category;
-    div.setAttribute('data-aos', 'fade-up');
-    div.setAttribute('data-aos-delay', Math.random() * 200);
+    div.setAttribute("data-aos", "fade-up");
+    div.setAttribute("data-aos-delay", Math.random() * 200);
     
     const previewHtml = this.generatePreviewHtml(shortcut);
     
@@ -290,22 +343,22 @@ class AtomalhosApp {
       </a>
       <div class="shortcut-actions">
         <button class="action-btn edit-btn" 
-                onclick="app.editShortcut('${shortcut.id}')" 
+                onclick="app.editShortcut(\'${shortcut.id}\')" 
                 title="Editar">
           <i class="fas fa-edit"></i>
         </button>
         <button class="action-btn duplicate-btn" 
-                onclick="app.duplicateShortcut('${shortcut.id}')" 
+                onclick="app.duplicateShortcut(\'${shortcut.id}\')" 
                 title="Duplicar">
           <i class="fas fa-copy"></i>
         </button>
-        <button class="action-btn favorite-btn ${shortcut.isFavorite ? 'active' : ''}" 
-                onclick="app.toggleFavorite('${shortcut.id}')" 
+        <button class="action-btn favorite-btn ${shortcut.isFavorite ? "active" : ""}" 
+                onclick="app.toggleFavorite(\'${shortcut.id}\')" 
                 title="Favoritar">
           <i class="fas fa-star"></i>
         </button>
         <button class="action-btn delete-btn" 
-                onclick="app.deleteShortcut('${shortcut.id}')" 
+                onclick="app.deleteShortcut(\'${shortcut.id}\')" 
                 title="Excluir">
           <i class="fas fa-trash"></i>
         </button>
@@ -316,17 +369,17 @@ class AtomalhosApp {
     
     // Adicionar animação de entrada
     setTimeout(() => {
-      div.classList.add('aos-animate');
+      div.classList.add("aos-animate");
     }, 100);
   }
 
   generatePreviewHtml(shortcut) {
     if (shortcut.preview?.image) {
-      return `<div class="shortcut-preview" style="background-image: url('${shortcut.preview.image}')"></div>`;
-    } else if (shortcut.icon && !shortcut.icon.startsWith('fa')) {
-      return `<div class="shortcut-preview"><img src="${shortcut.icon}" alt="Ícone" style="width: 32px; height: 32px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><i class="fas fa-globe" style="display: none;"></i></div>`;
+      return `<div class="shortcut-preview" style="background-image: url(\'${shortcut.preview.image}\')"></div>`;
+    } else if (shortcut.icon && !shortcut.icon.startsWith("fa")) {
+      return `<div class="shortcut-preview"><img src="${shortcut.icon}" alt="Ícone" style="width: 32px; height: 32px; object-fit: contain;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';"><i class="fas fa-globe" style="display: none;"></i></div>`;
     } else {
-      return `<div class="shortcut-preview"><i class="${shortcut.icon || 'fas fa-globe'}"></i></div>`;
+      return `<div class="shortcut-preview"><i class="${shortcut.icon || "fas fa-globe"}"></i></div>`;
     }
   }
 
@@ -334,10 +387,10 @@ class AtomalhosApp {
     let categorySection = document.getElementById(`category-${category}`);
     
     if (!categorySection) {
-      categorySection = document.createElement('div');
-      categorySection.className = 'category-section';
+      categorySection = document.createElement("div");
+      categorySection.className = "category-section";
       categorySection.id = `category-${category}`;
-      categorySection.setAttribute('data-aos', 'fade-up');
+      categorySection.setAttribute("data-aos", "fade-up");
       
       categorySection.innerHTML = `
         <h2 class="category-title">
@@ -346,7 +399,7 @@ class AtomalhosApp {
           </span>
           <div class="category-actions">
             <button class="category-action-btn delete-category-btn" 
-                    onclick="app.deleteCategory('${category}')" 
+                    onclick="app.deleteCategory(\'${category}\')" 
                     title="Excluir categoria">
               <i class="fas fa-trash"></i>
             </button>
@@ -356,10 +409,10 @@ class AtomalhosApp {
       `;
       
       this.categoriesContainer.appendChild(categorySection);
-      this.setupSortableContainer(categorySection.querySelector('.shortcuts-grid'));
+      this.setupSortableContainer(categorySection.querySelector(".shortcuts-grid"));
     }
     
-    return categorySection.querySelector('.shortcuts-grid');
+    return categorySection.querySelector(".shortcuts-grid");
   }
 
   formatCategoryName(category) {
@@ -401,7 +454,7 @@ class AtomalhosApp {
       const message = shortcutCount > 0 ? 
         `Categoria "${this.formatCategoryName(category)}" e ${shortcutCount} atalho(s) excluídos!` :
         `Categoria "${this.formatCategoryName(category)}" excluída!`;
-      this.showNotification(message, 'success');
+      this.showNotification(message, "success");
     }
   }
 
@@ -412,18 +465,18 @@ class AtomalhosApp {
       this.renderAllShortcuts();
       this.saveData();
       
-      const message = shortcut.isFavorite ? 'Adicionado aos favoritos!' : 'Removido dos favoritos!';
-      this.showNotification(message, 'success');
+      const message = shortcut.isFavorite ? "Adicionado aos favoritos!" : "Removido dos favoritos!";
+      this.showNotification(message, "success");
     }
   }
 
   deleteShortcut(id) {
-    if (confirm('Tem certeza que deseja excluir este atalho?')) {
+    if (confirm("Tem certeza que deseja excluir este atalho?")) {
       this.shortcuts = this.shortcuts.filter(s => s.id !== id);
       this.renderAllShortcuts();
       this.saveData();
       this.updateShortcutsCount();
-      this.showNotification('Atalho excluído com sucesso!', 'success');
+      this.showNotification("Atalho excluído com sucesso!", "success");
     }
   }
 
@@ -441,10 +494,10 @@ class AtomalhosApp {
       this.renderShortcut(duplicatedShortcut);
       this.saveData();
       this.updateShortcutsCount();
-      this.showNotification('Atalho duplicado com sucesso!', 'success');
+      this.showNotification("Atalho duplicado com sucesso!", "success");
       
       // Refresh AOS para novos elementos
-      if (typeof AOS !== 'undefined') {
+      if (typeof AOS !== "undefined") {
         AOS.refresh();
       }
     }
@@ -460,246 +513,241 @@ class AtomalhosApp {
 
   showEditModal(shortcut) {
     // Remover modal existente se houver
-    const existingModal = document.getElementById('edit-modal');
+    const existingModal = document.getElementById("edit-modal");
     if (existingModal) {
       existingModal.remove();
     }
     
     // Criar modal
-    const modal = document.createElement('div');
-    modal.id = 'edit-modal';
-    modal.className = 'modal-overlay';
+    const modal = document.createElement("div");
+    modal.id = "edit-modal";
+    modal.className = "modal-overlay";
     
     modal.innerHTML = `
       <div class="modal-content">
         <div class="modal-header">
-          <h3>Editar Atalho</h3>
-          <button class="modal-close" onclick="app.closeEditModal()">
-            <i class="fas fa-times"></i>
-          </button>
+          <h2>Editar Atalho</h2>
+          <button class="close-modal-btn" onclick="app.closeEditModal()">&times;</button>
         </div>
-        <form id="edit-form" onsubmit="app.saveEditedShortcut(event, '${shortcut.id}')">
-          <div class="form-group">
-            <label for="edit-name">Nome do site:</label>
-            <input type="text" id="edit-name" value="${shortcut.name}" required>
+        <form id="edit-shortcut-form">
+          <div class="form-field">
+            <label for="edit-shortcut-name">Nome do Atalho</label>
+            <input type="text" id="edit-shortcut-name" value="${shortcut.name}" required />
           </div>
-          <div class="form-group">
-            <label for="edit-url">URL:</label>
-            <input type="url" id="edit-url" value="${shortcut.url}" required>
+          <div class="form-field">
+            <label for="edit-shortcut-url">URL</label>
+            <input type="url" id="edit-shortcut-url" value="${shortcut.url}" required />
           </div>
-          <div class="form-group">
-            <label for="edit-category">Categoria:</label>
-            <select id="edit-category">
-              <option value="">Sem categoria</option>
-              ${Array.from(this.categories).sort().map(cat => 
-                `<option value="${cat}" ${cat === shortcut.category ? 'selected' : ''}>${this.formatCategoryName(cat)}</option>`
-              ).join('')}
+          <div class="form-field">
+            <label for="edit-shortcut-category">Categoria</label>
+            <select id="edit-shortcut-category">
+              <!-- Opções de categoria serão preenchidas aqui -->
             </select>
           </div>
-          <div class="form-group">
-            <label for="edit-new-category">Nova categoria (opcional):</label>
-            <input type="text" id="edit-new-category" placeholder="Digite uma nova categoria">
+          <div class="form-field">
+            <label for="edit-new-category">Nova categoria (opcional)</label>
+            <input type="text" id="edit-new-category" placeholder="Digite uma nova categoria" />
           </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" onclick="app.closeEditModal()">Cancelar</button>
-            <button type="submit" class="btn-primary">Salvar Alterações</button>
-          </div>
+          <button type="submit" class="create-btn">Salvar Alterações</button>
         </form>
       </div>
     `;
     
     document.body.appendChild(modal);
     
-    // Focar no primeiro campo
-    setTimeout(() => {
-      document.getElementById('edit-name').focus();
-    }, 100);
+    // Preencher categorias e selecionar a atual
+    const editCategorySelect = document.getElementById("edit-shortcut-category");
+    this.categories.forEach(cat => {
+      const option = document.createElement("option");
+      option.value = cat;
+      option.textContent = this.formatCategoryName(cat);
+      editCategorySelect.appendChild(option);
+    });
+    editCategorySelect.value = shortcut.category;
+
+    // Adicionar listener para o formulário de edição
+    document.getElementById("edit-shortcut-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const newName = document.getElementById("edit-shortcut-name").value.trim();
+      const newUrl = document.getElementById("edit-shortcut-url").value.trim();
+      let newCategory = document.getElementById("edit-shortcut-category").value;
+      const newNewCategory = document.getElementById("edit-new-category").value.trim();
+
+      if (newNewCategory) {
+        newCategory = newNewCategory.toLowerCase();
+        this.categories.add(newCategory);
+        this.updateCategoryOptions();
+      }
+
+      this.updateShortcut(shortcut.id, newName, newUrl, newCategory);
+      this.closeEditModal();
+      this.showNotification("Atalho atualizado com sucesso!", "success");
+    });
+
+    // Fechar modal ao clicar fora
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        this.closeEditModal();
+      }
+    });
   }
 
   closeEditModal() {
-    const modal = document.getElementById('edit-modal');
+    const modal = document.getElementById("edit-modal");
     if (modal) {
       modal.remove();
     }
   }
 
-  async saveEditedShortcut(event, id) {
-    event.preventDefault();
-    
+  updateShortcut(id, newName, newUrl, newCategory) {
     const shortcut = this.shortcuts.find(s => s.id === id);
-    if (!shortcut) return;
-    
-    const name = document.getElementById('edit-name').value.trim();
-    const url = document.getElementById('edit-url').value.trim();
-    let category = document.getElementById('edit-category').value;
-    const newCategory = document.getElementById('edit-new-category').value.trim();
-    
-    if (newCategory) {
-      category = newCategory.toLowerCase();
-      this.categories.add(category);
-      this.updateCategoryOptions();
+    if (shortcut) {
+      shortcut.name = newName;
+      shortcut.url = newUrl;
+      shortcut.category = newCategory;
+      this.saveData();
+      this.renderAllShortcuts();
     }
-    
-    // Atualizar o atalho
-    shortcut.name = name;
-    shortcut.url = url;
-    shortcut.category = category;
-    
-    // Recarregar ícone e preview se a URL mudou
-    if (shortcut.url !== url) {
-      shortcut.icon = await this.getWebsiteIcon(url);
-      shortcut.preview = await this.getWebsitePreview(url);
-    }
-    
-    // Fechar modal
-    this.closeEditModal();
-    
-    // Re-renderizar atalhos
-    this.renderAllShortcuts();
-    this.saveData();
-    this.updateShortcutsCount();
-    this.showNotification('Atalho atualizado com sucesso!', 'success');
   }
 
   handleSearch(term) {
     this.searchTerm = term.toLowerCase();
-    this.filterShortcuts();
+    this.renderAllShortcuts();
   }
 
   handleCategoryFilter(category) {
-    this.currentFilter = category || 'all';
-    this.updateFilterButtons();
-    this.filterShortcuts();
-  }
-
-  showFavorites() {
-    this.currentFilter = 'favorites';
-    this.updateFilterButtons();
-    this.filterShortcuts();
-  }
-
-  showAll() {
-    this.currentFilter = 'all';
-    this.updateFilterButtons();
-    this.filterShortcuts();
-  }
-
-  updateFilterButtons() {
-    this.showFavoritesBtn.classList.toggle('active', this.currentFilter === 'favorites');
-    this.showAllBtn.classList.toggle('active', this.currentFilter === 'all');
-  }
-
-  filterShortcuts() {
-    const shortcuts = document.querySelectorAll('.shortcut');
-    let visibleCount = 0;
+    this.currentFilter = category;
+    this.renderAllShortcuts();
     
-    shortcuts.forEach(shortcut => {
-      const name = shortcut.dataset.name;
-      const category = shortcut.dataset.category;
-      const isFavorite = shortcut.classList.contains('favorite');
-      
-      let show = true;
-      
-      // Filtro de busca
-      if (this.searchTerm && !name.includes(this.searchTerm)) {
-        show = false;
-      }
-      
-      // Filtro de categoria
-      if (this.currentFilter === 'favorites' && !isFavorite) {
-        show = false;
-      } else if (this.currentFilter !== 'all' && this.currentFilter !== 'favorites' && category !== this.currentFilter) {
-        show = false;
-      }
-      
-      shortcut.classList.toggle('hidden', !show);
-      if (show) visibleCount++;
-    });
-    
-    // Mostrar/ocultar seções vazias
-    this.updateSectionVisibility();
-    
-    // Mostrar mensagem se não houver resultados
-    this.showNoResultsMessage(visibleCount === 0);
-  }
-
-  showNoResultsMessage(show) {
-    let noResultsMsg = document.getElementById('no-results-message');
-    
-    if (show && !noResultsMsg) {
-      noResultsMsg = document.createElement('div');
-      noResultsMsg.id = 'no-results-message';
-      noResultsMsg.className = 'no-results';
-      noResultsMsg.innerHTML = `
-        <div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.7);">
-          <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-          <h3>Nenhum atalho encontrado</h3>
-          <p>Tente ajustar os filtros ou adicionar novos atalhos.</p>
-        </div>
-      `;
-      this.shortcutsContainer.parentNode.appendChild(noResultsMsg);
-    } else if (!show && noResultsMsg) {
-      noResultsMsg.remove();
+    // Atualizar estado dos botões de filtro
+    document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+    if (category === "favorites") {
+      this.showFavoritesBtn.classList.add("active");
+    } else if (category === "all") {
+      this.showAllBtn.classList.add("active");
     }
   }
 
-  updateSectionVisibility() {
-    const sections = document.querySelectorAll('.category-section');
+  showFavorites() {
+    this.currentFilter = "favorites";
+    this.renderAllShortcuts();
     
-    sections.forEach(section => {
-      const visibleShortcuts = section.querySelectorAll('.shortcut:not(.hidden)');
-      section.style.display = visibleShortcuts.length > 0 ? 'block' : 'none';
-    });
+    // Atualizar estado dos botões de filtro
+    document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+    this.showFavoritesBtn.classList.add("active");
   }
 
-  updateCategoryOptions() {
-    // Atualizar select do formulário
-    const currentValue = this.categorySelect.value;
-    this.categorySelect.innerHTML = '<option value="">Selecionar categoria</option>';
+  showAll() {
+    this.currentFilter = "all";
+    this.renderAllShortcuts();
     
-    Array.from(this.categories).sort().forEach(category => {
-      const option = document.createElement('option');
-      option.value = category;
-      option.textContent = this.formatCategoryName(category);
-      this.categorySelect.appendChild(option);
-    });
-    
-    this.categorySelect.value = currentValue;
-    
-    // Atualizar filtro de categorias
-    const currentFilter = this.categoryFilter.value;
-    this.categoryFilter.innerHTML = '<option value="">Todas as categorias</option>';
-    
-    Array.from(this.categories).sort().forEach(category => {
-      const option = document.createElement('option');
-      option.value = category;
-      option.textContent = this.formatCategoryName(category);
-      this.categoryFilter.appendChild(option);
-    });
-    
-    this.categoryFilter.value = currentFilter;
+    // Atualizar estado dos botões de filtro
+    document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+    this.showAllBtn.classList.add("active");
   }
 
   renderAllShortcuts() {
     // Limpar containers
-    this.shortcutsContainer.innerHTML = '';
-    this.favoritesContainer.innerHTML = '';
-    this.categoriesContainer.innerHTML = '';
+    this.shortcutsContainer.innerHTML = "";
+    this.favoritesContainer.innerHTML = "";
+    document.querySelectorAll(".category-section:not(#favorites-section):not(#uncategorized-section)").forEach(el => el.remove());
     
-    // Renderizar todos os atalhos
-    this.shortcuts.forEach((shortcut, index) => {
-      setTimeout(() => this.renderShortcut(shortcut), index * 50);
+    // Esconder/mostrar seção de favoritos
+    this.favoritesSection.style.display = this.currentFilter === "favorites" ? "block" : "none";
+
+    let filteredShortcuts = this.shortcuts.filter(shortcut => {
+      const matchesSearch = shortcut.name.toLowerCase().includes(this.searchTerm) || 
+                            shortcut.url.toLowerCase().includes(this.searchTerm);
+      
+      const matchesCategory = this.currentFilter === "all" || 
+                              (this.currentFilter === "favorites" && shortcut.isFavorite) ||
+                              (this.currentFilter !== "favorites" && shortcut.category === this.currentFilter);
+      
+      return matchesSearch && matchesCategory;
     });
-    
-    // Atualizar visibilidade da seção de favoritos
-    const hasFavorites = this.shortcuts.some(s => s.isFavorite);
-    this.favoritesSection.style.display = hasFavorites ? 'block' : 'none';
-    
-    // Aplicar filtros atuais
-    setTimeout(() => this.filterShortcuts(), 500);
+
+    if (filteredShortcuts.length === 0 && this.searchTerm === "" && this.currentFilter === "all") {
+      document.getElementById("empty-state").style.display = "block";
+    } else {
+      document.getElementById("empty-state").style.display = "none";
+    }
+
+    // Renderizar atalhos
+    filteredShortcuts.forEach(shortcut => {
+      if (this.currentFilter === "favorites" && !shortcut.isFavorite) {
+        return; // Não renderizar não-favoritos na visão de favoritos
+      }
+      this.renderShortcut(shortcut);
+    });
+
+    this.updateShortcutsCount();
   }
 
-  // Métodos de configuração
+  updateShortcutsCount() {
+    const count = this.shortcuts.length;
+    document.getElementById("shortcuts-count").textContent = `${count} atalho(s)`;
+  }
+
+  updateCategoryOptions() {
+    this.categorySelect.innerHTML = 
+      `<option value="">Selecionar categoria</option>
+       <option value="all">Todas as categorias</option>`;
+    this.categoryFilter.innerHTML = 
+      `<option value="all">Todas as categorias</option>`;
+
+    this.categories.forEach(category => {
+      const option = document.createElement("option");
+      option.value = category;
+      option.textContent = this.formatCategoryName(category);
+      this.categorySelect.appendChild(option);
+
+      const filterOption = document.createElement("option");
+      filterOption.value = category;
+      filterOption.textContent = this.formatCategoryName(category);
+      this.categoryFilter.appendChild(filterOption);
+    });
+
+    // Restaurar a seleção atual
+    this.categoryFilter.value = this.currentFilter;
+  }
+
+  saveData() {
+    localStorage.setItem("atomalhosShortcuts", JSON.stringify(this.shortcuts));
+    localStorage.setItem("atomalhosCategories", JSON.stringify(Array.from(this.categories)));
+    localStorage.setItem("atomalhosBgColor", document.body.style.getPropertyValue("--bg-color"));
+    localStorage.setItem("atomalhosButtonColor", document.body.style.getPropertyValue("--button-color"));
+    localStorage.setItem("atomalhosBgImage", localStorage.getItem("atomalhosBgImage")); // Salva a URL da imagem de fundo
+  }
+
+  loadData() {
+    const storedShortcuts = localStorage.getItem("atomalhosShortcuts");
+    const storedCategories = localStorage.getItem("atomalhosCategories");
+    const storedBgColor = localStorage.getItem("atomalhosBgColor");
+    const storedButtonColor = localStorage.getItem("atomalhosButtonColor");
+    const storedBgImage = localStorage.getItem("atomalhosBgImage");
+
+    if (storedShortcuts) {
+      this.shortcuts = JSON.parse(storedShortcuts);
+    }
+    if (storedCategories) {
+      this.categories = new Set(JSON.parse(storedCategories));
+    }
+    if (storedBgColor) {
+      this.updateBgColor(storedBgColor);
+    }
+    if (storedButtonColor) {
+      this.updateButtonColor(storedButtonColor);
+    }
+    if (storedBgImage) {
+      this.applyBgImage(storedBgImage);
+    }
+
+    this.renderAllShortcuts();
+    this.updateCategoryOptions();
+    this.updateShortcutsCount();
+  }
+
+  // Funções de configurações
   toggleSettings() {
     this.settingsPanel.classList.toggle("hidden");
   }
@@ -709,198 +757,44 @@ class AtomalhosApp {
   }
 
   updateBgColor(color) {
-    document.body.style.setProperty('--bg-color', color);
+    document.body.style.setProperty("--bg-color", color);
     this.saveData();
   }
 
   updateButtonColor(color) {
-    document.body.style.setProperty('--button-color', color);
+    document.body.style.setProperty("--button-color", color);
     this.saveData();
   }
 
-  handleBgImageUpload(e) {
-    const file = e.target.files[0];
+  handleBgImageUpload(event) {
+    const file = event.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        this.showNotification('Imagem muito grande. Máximo 5MB.', 'error');
-        return;
-      }
-      
       const reader = new FileReader();
-      reader.onload = () => {
-        document.body.style.backgroundImage = `url(${reader.result})`;
-        localStorage.setItem("bgImage", reader.result);
-        this.saveData();
-        this.showNotification('Imagem de fundo atualizada!', 'success');
+      reader.onload = (e) => {
+        const imageUrl = e.target.result;
+        this.applyBgImage(imageUrl);
+        localStorage.setItem("atomalhosBgImage", imageUrl);
+        this.showNotification("Imagem de fundo aplicada!", "success");
       };
       reader.readAsDataURL(file);
     }
   }
 
+  applyBgImage(imageUrl) {
+    document.body.style.backgroundImage = `url("${imageUrl}")`;
+    document.body.style.backgroundSize = "cover";
+    document.body.style.backgroundPosition = "center";
+    document.body.style.backgroundAttachment = "fixed";
+  }
+
   removeBgImage() {
-    if (confirm('Tem certeza que deseja remover a imagem de fundo?')) {
-      document.body.style.backgroundImage = "none";
-      localStorage.removeItem("bgImage");
-      this.saveData();
-      this.showNotification('Imagem de fundo removida!', 'success');
-    }
-  }
-
-  // Persistência de dados
-  saveData() {
-    const data = {
-      shortcuts: this.shortcuts,
-      categories: Array.from(this.categories),
-      bgColor: document.body.style.getPropertyValue('--bg-color'),
-      buttonColor: document.body.style.getPropertyValue('--button-color'),
-      bgImage: localStorage.getItem("bgImage") || null,
-      version: '2.0'
-    };
-    localStorage.setItem("atomlhosData", JSON.stringify(data));
-  }
-
-  loadData() {
-    const data = JSON.parse(localStorage.getItem("atomlhosData"));
-    if (!data) return;
-
-    // Carregar configurações visuais
-    if (data.bgColor) {
-      document.body.style.setProperty('--bg-color', data.bgColor);
-      this.bgColorPicker.value = data.bgColor;
-    }
-    if (data.buttonColor) {
-      document.body.style.setProperty('--button-color', data.buttonColor);
-      this.buttonColorPicker.value = data.buttonColor;
-    }
-    if (data.bgImage) {
-      document.body.style.backgroundImage = `url(${data.bgImage})`;
-    }
-
-    // Carregar categorias
-    if (data.categories) {
-      this.categories = new Set(data.categories);
-    }
-
-    // Carregar atalhos
-    if (data.shortcuts) {
-      if (data.version === '2.0') {
-        // Dados na nova estrutura
-        this.shortcuts = data.shortcuts;
-      } else {
-        // Migrar dados antigos
-        this.shortcuts = data.shortcuts.map(shortcut => ({
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          name: shortcut.name,
-          url: shortcut.url,
-          category: '',
-          isFavorite: false,
-          icon: 'fas fa-globe',
-          preview: null,
-          createdAt: new Date().toISOString()
-        }));
-        this.saveData(); // Salvar dados migrados
-      }
-    }
-
-    this.updateCategoryOptions();
-    this.renderAllShortcuts();
-  }
-
-  updateShortcutsCount() {
-    const count = this.shortcuts.length;
-    const countElement = document.getElementById('shortcuts-count');
-    if (countElement) {
-      countElement.textContent = `${count} ${count === 1 ? 'atalho' : 'atalhos'}`;
-    }
-    
-    // Mostrar/ocultar estado vazio
-    const emptyState = document.getElementById('empty-state');
-    if (emptyState) {
-      emptyState.style.display = count === 0 ? 'block' : 'none';
-    }
-    
-    // Ocultar seção sem categoria se não houver atalhos sem categoria
-    const uncategorizedShortcuts = this.shortcuts.filter(s => !s.category);
-    const uncategorizedSection = document.getElementById('uncategorized-section');
-    if (uncategorizedSection) {
-      uncategorizedSection.style.display = uncategorizedShortcuts.length > 0 ? 'block' : 'none';
-    }
-  }
-
-  // Corrigir problema das imagens
-  async getWebsiteIcon(url) {
-    try {
-      const domain = new URL(url).hostname;
-      
-      // Múltiplas fontes de favicon
-      const iconSources = [
-        `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
-        `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-        `https://${domain}/favicon.ico`,
-        `https://api.faviconkit.com/${domain}/64`,
-        `https://www.google.com/s2/favicons?domain=${domain}`
-      ];
-      
-      for (const iconUrl of iconSources) {
-        try {
-          const response = await fetch(iconUrl, { method: 'HEAD' });
-          if (response.ok) {
-            return iconUrl;
-          }
-        } catch (error) {
-          continue;
-        }
-      }
-      
-      // Fallback para ícone genérico
-      return 'fas fa-globe';
-    } catch (error) {
-      console.log('Erro ao obter ícone:', error);
-      return 'fas fa-globe';
-    }
-  }
-
-  async getWebsitePreview(url) {
-    try {
-      // Usar microlink.io para preview
-      const response = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`);
-      const data = await response.json();
-      
-      if (data.status === 'success' && data.data) {
-        return {
-          image: data.data.screenshot?.url,
-          title: data.data.title,
-          description: data.data.description
-        };
-      }
-      
-      return null;
-    } catch (error) {
-      console.log('Preview não disponível:', error);
-      return null;
-    }
-  }
-
-  generatePreviewHtml(shortcut) {
-    if (shortcut.preview?.image) {
-      return `<div class="shortcut-preview" style="background-image: url('${shortcut.preview.image}')"></div>`;
-    } else if (shortcut.icon && !shortcut.icon.startsWith('fa')) {
-      return `<div class="shortcut-preview">
-        <img src="${shortcut.icon}" alt="Ícone" 
-             style="width: 48px; height: 48px; object-fit: contain;" 
-             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-        <i class="fas fa-globe" style="display: none; font-size: 2rem; color: rgba(255,255,255,0.7);"></i>
-      </div>`;
-    } else {
-      return `<div class="shortcut-preview">
-        <i class="${shortcut.icon || 'fas fa-globe'}" style="font-size: 2rem; color: rgba(255,255,255,0.7);"></i>
-      </div>`;
-    }
+    document.body.style.backgroundImage = "none";
+    localStorage.removeItem("atomalhosBgImage");
+    this.showNotification("Imagem de fundo removida!", "success");
+    this.saveData();
   }
 }
 
-// Inicializar aplicação quando o DOM estiver carregado
-document.addEventListener('DOMContentLoaded', () => {
-  window.app = new AtomalhosApp();
-});
+const app = new AtomalhosApp();
+
 
