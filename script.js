@@ -260,9 +260,8 @@ async addShortcut(name, url, category = "", isFavorite = false) {
       return `
         <div class="shortcut-preview">
           <img
-            src="\${shortcut.icon}"
+            src="${shortcut.icon}"
             alt="Ícone"
-            style="width: 32px; height: 32px; object-fit: contain;"
             onerror="this.src='assets/default-icon.png';"
           />
         </div>
