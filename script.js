@@ -172,151 +172,33 @@ class AtomalhosApp {
     }, 3000);
   }
 
-  async addShortcut(name, url, category = "", isFavorite = false) {
-    const shortcut = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      name,
-      url,
-      category,
-      isFavorite,
-      icon: await this.getWebsiteIcon(url),
-      preview: await this.getWebsitePreview(url),
-      createdAt: new Date().toISOString()
-    };
-    
-    this.shortcuts.push(shortcut);
-    this.renderShortcut(shortcut);
-    this.saveData();
-    this.updateCategoryOptions();
-    this.updateShortcutsCount();
-    
-    // Refresh AOS para novos elementos
-    if (typeof AOS !== "undefined") {
-      AOS.refresh();
-    }
-  }
-
-  async getWebsiteIcon(url) {
-    try {
-      const domain = new URL(url).hostname;
-      
-      // Tentar diferentes fontes de favicon
-      const iconSources = [
-        `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
-        `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-        `https://${domain}/favicon.ico`
-      ];
-      
-      for (const iconUrl of iconSources) {
-        try {
-          const response = await fetch(iconUrl);
-          if (response.ok) {
-            return iconUrl;
-          }
-        } catch {
-          continue;
-        }
-      }
-      
-      return "fas fa-globe";
-    } catch {
-      return "fas fa-globe";
-    }
-  }
-
-  async getWebsitePreview(url) {
-    try {
-      console.log(`Attempting to get favicon for: ${url}`);
-      
-      // Extrair o domínio da URL
-      const urlObj = new URL(url);
-      const domain = urlObj.hostname;
-      
-      // Múltiplas estratégias para obter o favicon
-      const faviconSources = [
-        // Google Favicon API (mais confiável)
-        `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
-        // DuckDuckGo Favicon API
-        `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-        // Favicon padrão do site
-        `${urlObj.protocol}//${domain}/favicon.ico`,
-        // Favicon na raiz
-        `${urlObj.protocol}//${domain}/favicon.png`,
-        // Apple touch icon
-        `${urlObj.protocol}//${domain}/apple-touch-icon.png`
-      ];
-      
-      // Tentar carregar o favicon
-      const faviconUrl = await this.tryLoadFavicon(faviconSources);
-      
-      const previewData = {
-        title: domain,
-        description: `Site: ${domain}`,
-        image: faviconUrl,
-        logo: faviconUrl
-      };
-      
-      console.log("Favicon data extracted:", previewData);
-      return previewData;
-      
-    } catch (error) {
-      console.error("Error fetching favicon:", error);
-      
-      // Fallback: extrair informações básicas da URL
-      try {
-        const urlObj = new URL(url);
-        return {
-          title: urlObj.hostname,
-          description: `Site: ${urlObj.hostname}`,
-          image: null,
-          logo: null
-        };
-      } catch (urlError) {
-        console.error("Error parsing URL:", urlError);
-        return null;
-      }
-    }
-  }
-
-  async tryLoadFavicon(faviconSources) {
-    for (const faviconUrl of faviconSources) {
-      try {
-        console.log(`Trying favicon source: ${faviconUrl}`);
-        
-        // Criar uma imagem para testar se o favicon carrega
-        const img = new Image();
-        
-        const loadPromise = new Promise((resolve, reject) => {
-          img.onload = () => {
-            console.log(`Favicon loaded successfully: ${faviconUrl}`);
-            resolve(faviconUrl);
-          };
-          img.onerror = () => {
-            console.log(`Favicon failed to load: ${faviconUrl}`);
-            reject(new Error('Failed to load'));
-          };
-          
-          // Timeout de 5 segundos
-          setTimeout(() => {
-            reject(new Error('Timeout'));
-          }, 5000);
-        });
-        
-        img.src = faviconUrl;
-        
-        // Se chegou até aqui, o favicon carregou com sucesso
-        return await loadPromise;
-        
-      } catch (error) {
-        console.log(`Failed to load favicon from: ${faviconUrl}`, error);
-        continue; // Tentar próxima fonte
-      }
-    }
-    
-    // Se nenhum favicon foi encontrado, retornar null
-    console.log("No favicon found from any source");
+async getWebsiteIcon(url) {
+  try {
+    const domain = new URL(url).hostname;
+    // Retorna sempre o favicon do site sem problemas de CORS
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  } catch {
     return null;
   }
+}
+
+// Atualiza addShortcut para usar apenas o favicon
+async addShortcut(name, url, category = "", isFavorite = false) {
+  const iconUrl = await this.getWebsiteIcon(url);
+  const shortcut = {
+    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    name,
+    url,
+    category,
+    isFavorite,
+    icon: iconUrl,
+    createdAt: new Date().toISOString()
+  };
+  this.shortcuts.push(shortcut);
+  this.renderShortcut(shortcut);
+  this.saveData();
+  this.updateCategoryOptions();
+}
 
   renderShortcut(shortcut) {
     const container = shortcut.category ? 
@@ -374,12 +256,19 @@ class AtomalhosApp {
   }
 
   generatePreviewHtml(shortcut) {
-    if (shortcut.preview?.image) {
-      return `<div class="shortcut-preview" style="background-image: url(\'${shortcut.preview.image}\')"></div>`;
-    } else if (shortcut.icon && !shortcut.icon.startsWith("fa")) {
-      return `<div class="shortcut-preview"><img src="${shortcut.icon}" alt="Ícone" style="width: 32px; height: 32px; object-fit: contain;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';"><i class="fas fa-globe" style="display: none;"></i></div>`;
+    if (shortcut.icon) {
+      return `
+        <div class="shortcut-preview">
+          <img
+            src="\${shortcut.icon}"
+            alt="Ícone"
+            style="width: 32px; height: 32px; object-fit: contain;"
+            onerror="this.src='assets/default-icon.png';"
+          />
+        </div>
+      `;
     } else {
-      return `<div class="shortcut-preview"><i class="${shortcut.icon || "fas fa-globe"}"></i></div>`;
+      return `<div class="shortcut-preview"><i class="fas fa-globe"></i></div>`;
     }
   }
 
