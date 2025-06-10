@@ -1357,3 +1357,25 @@ body.light-theme .theme-switcher button {
   background: var(--primary-color);
   box-shadow: var(--shadow);
 }
+
+.logo-container {
+  position: relative;
+  display: inline-block;
+}
+
+.logo-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 500px;
+  height: auto;
+  transform: translate(-50%, -50%);
+  opacity: 0.8;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.app-header h1 {
+  position: relative;
+  z-index: 1;
+}
